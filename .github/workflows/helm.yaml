@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Helm Checks
 on: pull_request
 jobs:
   build-lint-test:
