@@ -1,0 +1,56 @@
+version: '3'
+tasks:
+  default:
+    cmds:
+    - task -l
+    silent: true
+  dev-install:
+    cmds:
+    - go install github.com/swaggo/swag/cmd/swag@latest
+    - go install github.com/google/ko@latest
+  coverage:
+    desc: Generate Code Coverage Report
+    sources:
+    - '**/*.go'
+    cmds:
+    - mkdir -p build/coverage
+    - go test -cover -covermode=count -shuffle=on -timeout 2s -coverprofile=build/coverage/coverage.out ./...
+    - go tool cover -html=build/coverage/coverage.out -o build/coverage/index.html 
+    - echo "Coverage Generated"
+  format:
+    desc: Format golang
+    sources:
+    - '**/*.go'
+    cmds:
+    - go fmt ./...
+  swagger-generation:
+    cmds:
+    - swag init --parseDependency -g internal/api/api.go
+  build:
+    cmds:
+    - ko build ./cmd/server
+#
+  run:
+    cmds:
+    -  go run cmd/server/main.go 
+
+  test:
+    desc: Execute unit tests.
+    deps:
+      - coverage
+
+  release-helm:
+    cmds:
+      - mkdir -p release 
+      - yq e '.version |= "{{.VERSION}}"' -i charts/portfolio-operator/Chart.yaml
+      - yq e '.appVersion |= "{{.VERSION}}"' -i charts/portfolio-operator/Chart.yaml
+      - yq e '.server.image |= "criyl/portfolio-operator:{{.VERSION}}"' -i charts/portfolio-operator/values.yaml
+      - helm package --app-version {{.VERSION}} charts/portfolio-operator
+      - mv *.tgz release
+
+  release:
+    desc: Handle release version
+    deps:
+      - release-helm
+    cmds:
+      - yq e '.env.VERSION |= "{{.VERSION}}"' -i Taskfile.yml

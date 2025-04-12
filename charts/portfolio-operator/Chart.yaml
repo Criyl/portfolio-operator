@@ -1,0 +1,9 @@
+apiVersion: v2
+name: portfolio-operator
+description: Manage your portfolio pieces natively in your kubernetes cluster.
+type: application
+version: 0.1.0
+appVersion: 0.1.0
+maintainers:
+  - name: Criyl
+    email: christopher.x.carroll@gmail.com

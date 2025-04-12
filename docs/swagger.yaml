@@ -1,0 +1,70 @@
+basePath: /
+definitions:
+  carroll_codes_portfolio-operator_api_v1.PortfolioSpec:
+    properties:
+      blog:
+        type: string
+      healthcheck:
+        type: string
+      icon:
+        type: string
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      url:
+        type: string
+    type: object
+info:
+  contact:
+    email: chris@carroll.codes
+    name: Christopher Carroll
+    url: https://carroll.codes
+  description: Manage your portfolio natively in your kubernetes cluster.
+  title: Portfolio Operator
+  version: "1"
+paths:
+  /api/v1/portfolio:
+    get:
+      description: return list of all entries
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/carroll_codes_portfolio-operator_api_v1.PortfolioSpec'
+            type: array
+      summary: return list of all entries
+      tags:
+      - Portfolio
+  /api/v1/portfolio/tag/{tag}:
+    get:
+      description: return list of all entries with a specified tag
+      parameters:
+      - description: Tag
+        in: path
+        name: tag
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/carroll_codes_portfolio-operator_api_v1.PortfolioSpec'
+            type: array
+      summary: return list of all entries with a specified tag
+      tags:
+      - Portfolio
+  /health:
+    get:
+      description: return return ok status if service is healthy
+      responses:
+        "200":
+          description: OK
+      summary: return return ok status if service is healthy
+      tags:
+      - Health
+swagger: "2.0"

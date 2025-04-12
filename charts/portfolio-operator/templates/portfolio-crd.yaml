@@ -1,0 +1,38 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: portfolios.carroll.codes
+spec:
+  group: carroll.codes
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                name: 
+                  type: string
+                url: 
+                  type: string
+                blog: 
+                  type: string
+                icon: 
+                  type: string
+                healthcheck: 
+                  type: string
+                tags:
+                  items:
+                    type: string
+                  type: array
+  scope: Namespaced
+  names:
+    plural: portfolios
+    singular: portfolio
+    kind: Portfolio
+    shortNames:
+    - pf
