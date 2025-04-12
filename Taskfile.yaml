@@ -1,39 +1,44 @@
 version: '3'
+env:
+  VERSION: 0.1.0
 tasks:
   default:
     cmds:
-    - task -l
+      - task -l
     silent: true
   dev-install:
     cmds:
-    - go install github.com/swaggo/swag/cmd/swag@latest
-    - go install github.com/google/ko@latest
+      - go install github.com/swaggo/swag/cmd/swag@latest
+      - go install github.com/google/ko@latest
   coverage:
     desc: Generate Code Coverage Report
     sources:
-    - '**/*.go'
+      - '**/*.go'
     cmds:
-    - mkdir -p build/coverage
-    - go test -cover -covermode=count -shuffle=on -timeout 2s -coverprofile=build/coverage/coverage.out ./...
-    - go tool cover -html=build/coverage/coverage.out -o build/coverage/index.html 
-    - echo "Coverage Generated"
+      - mkdir -p build/coverage
+      - go test -cover -covermode=count -shuffle=on -timeout 2s -coverprofile=build/coverage/coverage.out ./...
+      - go tool cover -html=build/coverage/coverage.out -o build/coverage/index.html
+      - echo "Coverage Generated"
   format:
     desc: Format golang
     sources:
-    - '**/*.go'
+      - '**/*.go'
     cmds:
-    - go fmt ./...
+      - go fmt ./...
   swagger-generation:
+    desc: Generate swagger docs
     cmds:
-    - swag init --parseDependency -g internal/api/api.go
+      - swag init --parseDependency -g internal/api/api.go
   build:
+    desc: Build KO Image
+    env:
+      KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator
     cmds:
-    - ko build ./cmd/server
-#
+      - ko build --bare -t {{.VERSION}} ./cmd/server
   run:
+    desc: Run Program
     cmds:
-    -  go run cmd/server/main.go 
-
+      - go run cmd/server/main.go
   test:
     desc: Execute unit tests.
     deps:
@@ -41,10 +46,9 @@ tasks:
 
   release-helm:
     cmds:
-      - mkdir -p release 
+      - mkdir -p release
       - yq e '.version |= "{{.VERSION}}"' -i charts/portfolio-operator/Chart.yaml
       - yq e '.appVersion |= "{{.VERSION}}"' -i charts/portfolio-operator/Chart.yaml
-      - yq e '.server.image |= "criyl/portfolio-operator:{{.VERSION}}"' -i charts/portfolio-operator/values.yaml
       - helm package --app-version {{.VERSION}} charts/portfolio-operator
       - mv *.tgz release
 
@@ -53,4 +57,4 @@ tasks:
     deps:
       - release-helm
     cmds:
-      - yq e '.env.VERSION |= "{{.VERSION}}"' -i Taskfile.yml
+      - yq e '.env.VERSION |= "{{.VERSION}}"' -i Taskfile.yaml

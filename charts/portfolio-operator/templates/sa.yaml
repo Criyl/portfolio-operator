@@ -1,0 +1,46 @@
+{{- if .Values.serviceAccount.create -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "portfolio-operator.serviceAccountName" . }}
+  labels:
+    {{- include "portfolio-operator.labels" . | nindent 4 }}
+  {{- with .Values.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name:  {{ include "portfolio-operator.serviceAccountName" . }}-role
+rules:
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - carroll.codes
+    resources:
+      - portfolios
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "portfolio-operator.serviceAccountName" . }}-role-binding
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: {{ include "portfolio-operator.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io 
+  kind: ClusterRole
+  name: {{ include "portfolio-operator.serviceAccountName" . }}-role
