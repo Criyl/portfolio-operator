@@ -21,6 +21,7 @@ tasks:
     cmds:
       - echo "{{.GITHUB_TOKEN}}" | helm registry login -u doesntmatter --password-stdin ghcr.io/criyl
       - helm push {{.ROOT_DIR}}/release/portfolio-operator-`yq e '.version' portfolio-operator/Chart.yaml`.tgz oci://ghcr.io/criyl
+      - task: tag-helm
 
   tag-helm:
     vars:

@@ -1,41 +1,25 @@
 package config
 
-import (
-	"os"
-	"strconv"
-)
-
 type Config struct {
-	HOST       string
-	PORT       string
-	KUBECONFIG string
-	DEBUG      bool
+	KUBECONFIG   string
+	DEBUG        bool
+	HOST         string
+	API_PORT     string
+	METRICS_PORT string
 }
 
-func GetEnvWithDefault(key string, defaultValue string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		return defaultValue
+func DefaultConfig() *Config {
+	return &Config{
+		KUBECONFIG: GetEnvWithDefault("KUBECONFIG", "~/.kube/config"),
+		DEBUG:      GetEnvBoolWithDefault("DEBUG", true),
+		HOST:       GetEnvWithDefault("HOST", "0.0.0.0"),
+		API_PORT: GetMultiEnvWithDefault([]string{
+			"API_PORT", "PORT",
+		},
+			"8080",
+		),
+		METRICS_PORT: GetEnvWithDefault("METRICS_PORT", "8081"),
 	}
-	return val
 }
 
-func GetEnvBoolWithDefault(key string, defaultValue bool) bool {
-	val := os.Getenv(key)
-	if val == "" {
-		return defaultValue
-	}
-
-	boolVal, err := strconv.ParseBool(val)
-	if err != nil {
-		return defaultValue
-	}
-	return boolVal
-}
-
-var Instance *Config = &Config{
-	KUBECONFIG: GetEnvWithDefault("KUBECONFIG", "~/.kube/config"),
-	HOST:       GetEnvWithDefault("HOST", "0.0.0.0"),
-	PORT:       GetEnvWithDefault("PORT", "8080"),
-	DEBUG:      GetEnvBoolWithDefault("DEBUG", true),
-}
+var Instance *Config = DefaultConfig()

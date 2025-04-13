@@ -22,7 +22,6 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
-	port     = opv1.Portfolio{}
 )
 
 func init() {
@@ -30,11 +29,9 @@ func init() {
 	utilruntime.Must(v1.AddToScheme(scheme))
 }
 
-func Main() {
-	log.Println("starting controller...")
+func getRestConfig() *rest.Config {
 	var (
 		restConfig *rest.Config
-		err        error
 	)
 
 	if _, err := os.Stat(config.Instance.KUBECONFIG); errors.Is(err, os.ErrNotExist) { // if kube config doesn't exist, try incluster config
@@ -48,8 +45,14 @@ func Main() {
 			panic(err.Error())
 		}
 	}
+	return restConfig
+}
 
+func Main() {
+	log.Println("starting controller...")
 	ctrl.SetLogger(zap.New())
+
+	restConfig := getRestConfig()
 
 	clientset, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
@@ -60,7 +63,7 @@ func Main() {
 	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
-			BindAddress: ":8443",
+			BindAddress: ":" + config.Instance.METRICS_PORT,
 		},
 	})
 	if err != nil {

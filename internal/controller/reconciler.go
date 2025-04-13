@@ -29,16 +29,12 @@ func (r *ingressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		ingress   v1.Ingress
 	)
 
+	portfolioName := generatePortfolioName(req.NamespacedName)
 	// Get the ingress being reconciled
 	err := r.Client.Get(ctx, req.NamespacedName, &ingress)
 
-	portfolio = portfolioFromIngress(ingress)
+	portfolio = portfolioCreateFromIngress(ingress)
 	portfolio.Namespace = req.Namespace
-
-	if !portfolio.IsValid() {
-		return ctrl.Result{}, nil
-	}
-	portfolioName := portfolio.Name
 
 	if err != nil {
 		if k8serrors.IsNotFound(err) { // ingress not found, we can clean up resources
@@ -64,6 +60,10 @@ func (r *ingressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
+	}
+
+	if !portfolio.IsValid() {
+		return ctrl.Result{}, nil
 	}
 
 	// See if portfolio already exists
@@ -93,7 +93,7 @@ func (r *ingressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Otherwise update existing Portfolio
-	err = r.Client.Update(ctx, portfolio)
+	err = r.Client.Update(ctx, portfolioUpdateFromIngress(ingress, portfolio))
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("couldn't update Portfolio %s: %s", portfolioName, err)
 	}

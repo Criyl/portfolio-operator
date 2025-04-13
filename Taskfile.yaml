@@ -35,7 +35,7 @@ tasks:
       - '**/*.go'
     desc: Generate swagger docs
     cmds:
-      - swag init --parseDependency -g internal/api/api.go
+      - swag init --parseDependency -g internal/api/main.go
   run:
     desc: Run Program
     cmds:
@@ -59,12 +59,6 @@ tasks:
     env:
       KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator-controller
       GITHUB_TOKEN: ""
-    vars:
-      CURRENT_CONTROLLER_VERSION:
-        sh: yq e '.appVersion' {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
-    preconditions:
-      - sh: "[ '{{.VERSION}}' != '{{.CURRENT_CONTROLLER_VERSION}}' ]"
-        msg: "Cannot release an appVersion without a version bump. {{.CURRENT_CONTROLLER_VERSION}} -> {{.VERSION}}"
     cmds:
       - echo "{{.GITHUB_TOKEN}}" | ko login ghcr.io --username doesntmatter --password-stdin
       - |
