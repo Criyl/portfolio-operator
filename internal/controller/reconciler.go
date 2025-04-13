@@ -86,7 +86,7 @@ func (r *ingressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{}, fmt.Errorf("failed to create Portfolio %s: %s", portfolioName, err)
 			}
 
-			log.Println("Created Portfolio ", portfolio)
+			log.Println("Created Portfolio ", portfolio.Namespace, "/", portfolio.Name)
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err

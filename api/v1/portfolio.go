@@ -19,10 +19,10 @@ type Portfolio struct {
 type PortfolioSpec struct {
 	Name        string   `json:"name"`
 	Url         string   `json:"url"`
-	Blog        string   `json:"blog"`
-	Icon        string   `json:"icon"`
-	Healthcheck string   `json:"healthcheck"`
-	Tags        []string `json:"tags"`
+	Blog        string   `json:"blog,omitempty"`
+	Icon        string   `json:"icon,omitempty"`
+	Healthcheck string   `json:"healthcheck,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
 }
 
 func (Portfolio *Portfolio) IsValid() bool {

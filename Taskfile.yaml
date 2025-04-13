@@ -29,7 +29,7 @@ tasks:
   swagger-generation:
     desc: Generate swagger docs
     cmds:
-      - swag init --parseDependency -g internal/api/api.go
+      - swag init --parseDependency -g internal/api/main.go
   build:
     desc: Build KO Image
     env:
@@ -37,7 +37,11 @@ tasks:
       GITHUB_TOKEN: ""
     cmds:
       - echo "{{.GITHUB_TOKEN}}" | ko login ghcr.io --username my-username --password-stdin
-      - ko build --bare -t {{.VERSION}} ./cmd/server
+      - |
+        ko build --bare \
+        -t {{.VERSION}} \
+        --image-label org.opencontainers.image.source=https://github.com/criyl/portfolio-operator \
+        ./cmd/server
   run:
     desc: Run Program
     cmds:
