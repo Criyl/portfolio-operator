@@ -25,12 +25,13 @@ func MainLoop() {
 	querier.Init()
 	r := gin.Default()
 
-	if config.Instance.DEBUG == true {
-		r.GET("/", func(c *gin.Context) {
-			c.Redirect(http.StatusFound, "/swagger/index.html")
-		})
-		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	}
+	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{
+			"/health",
+		},
+	}))
+
+	r.Use(gin.Recovery())
 
 	r.GET("/health", Health)
 
@@ -42,7 +43,14 @@ func MainLoop() {
 		entry.GET("/tag/:tag", ListPortfoliosByTag)
 	}
 
-	err := r.Run(config.Instance.HOST + ":" + config.Instance.PORT)
+	if config.Instance.DEBUG == true {
+		r.GET("/", func(c *gin.Context) {
+			c.Redirect(http.StatusFound, "/swagger/index.html")
+		})
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
+
+	err := r.Run(config.Instance.HOST + ":" + config.Instance.API_PORT)
 	if err != nil {
 		log.Fatal(err)
 	}

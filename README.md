@@ -1,6 +1,16 @@
 [![Helm Checks](https://github.com/Criyl/portfolio-operator/actions/workflows/ci.yaml/badge.svg)](https://github.com/Criyl/portfolio-operator/actions/workflows/ci.yaml)
+
 # Portfolio Kubernetes Operator
-Manage your portfolio natively in your kubernetes cluster. 
+
+Manage your portfolio natively in your kubernetes cluster.
+
+## Install with Helm
+
+Chart is available as an image on [ghcr](https://github.com/Criyl/portfolio-operator/pkgs/container/portfolio-operator)
+
+```bash
+helm install portfolio-operator oci://ghcr.io/criyl/portfolio-operator
+```
 
 ### What is it?
 With the Portfolio Operator you can define the state of your portfolio dynamically using the Portfolio Custom Resource. Portfolio's will also be automatically created by annotating ingresses with the [supported annotations](#supported-ingress-annotations). 
@@ -47,10 +57,13 @@ spec:
   - tag3
 ```
 
-### Environment Variables
-| KEY        | DESCRIPTION               | DEFAULT        |
-| ---------- | ------------------------- | -------------- |
-| KUBECONFIG | Path to kubernetes config | ~/.kube/config |
-| DEBUG      | Deploy with swagger UI    | true           |
-| HOST       | Host to serve CRUD api    | 0.0.0.0        |
-| PORT       | Port to serve CRUD api    | 8080           |
+## Environment Variables
+
+| KEY          | DESCRIPTION                          | DEFAULT        |
+| ------------ | ------------------------------------ | -------------- |
+| KUBECONFIG   | Path to kubernetes config            | ~/.kube/config |
+| DEBUG        | Deploy with swagger UI               | true           |
+| HOST         | Host to serve CRUD api               | 0.0.0.0        |
+| PORT         | alias for API_PORT                   |                |
+| API_PORT     | Port to serve CRUD api               | 8080           |
+| METRICS_PORT | Port to serve Controller Metrics api | 8081           |

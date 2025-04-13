@@ -11,14 +11,6 @@ import (
 
 var querier = controller.Querier{}
 
-func portfolioListTo(pfList *opv1.PortfolioList) []opv1.PortfolioSpec {
-	list := []opv1.PortfolioSpec{}
-	for _, item := range pfList.Items {
-		list = append(list, item.Spec)
-	}
-	return list
-}
-
 // ListEntries return list of all entries
 // @Summary return list of all entries
 // @Description return list of all entries
@@ -34,7 +26,7 @@ func ListPortfolios(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 	}
-	c.JSON(http.StatusOK, portfolioListTo(list))
+	c.JSON(http.StatusOK, portfolioListToListofPortfolioSpec(list))
 }
 
 // ListEntriesByTag return list of all entries with a specified tag
@@ -53,5 +45,5 @@ func ListPortfoliosByTag(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 	}
-	c.JSON(http.StatusOK, portfolioListTo(list))
+	c.JSON(http.StatusOK, portfolioListToListofPortfolioSpec(list))
 }

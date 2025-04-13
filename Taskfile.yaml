@@ -35,36 +35,28 @@ tasks:
       - '**/*.go'
     desc: Generate swagger docs
     cmds:
-      - swag init --parseDependency -g internal/api/api.go
+      - swag init --parseDependency -g internal/api/main.go
   run:
     desc: Run Program
     cmds:
       - go run cmd/server/main.go
-  prepare-controller-image:
-    env:
-      KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator-controller
-      GITHUB_TOKEN: ""
-    vars:
-      NEXT_HELM_VERSION:
-        sh: yq e '.version' {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml | awk -v versionDiff="0.0.1" -F. -f {{.ROOT_DIR}}/scripts/version-bump.awk OFS=.
-      CURRENT_CONTROLLER_VERSION:
-        sh: yq e '.appVersion' {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
-    preconditions:
-      - sh: "[ '{{.VERSION}}' != '{{.CURRENT_CONTROLLER_VERSION}}' ]"
-        msg: "Cannot release an appVersion without a version bump. {{.CURRENT_CONTROLLER_VERSION}} -> {{.VERSION}}"
+  test:
+    desc: Execute unit tests.
+    deps:
+      - coverage
+  release-helm:
     cmds:
-      - yq e '.appVersion |= "{{.VERSION}}"' -i {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
-      - yq e '.version |= "{{.NEXT_HELM_VERSION}}"' -i {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
+      - mkdir -p release
+      - yq e '.appVersion |= "{{.VERSION}}"' -i charts/portfolio-operator/Chart.yaml
+      - helm package --app-version {{.VERSION}} charts/portfolio-operator
+      - mv *.tgz release
+      - echo "{{.GITHUB_TOKEN}}" | helm registry login -u doesntmatter --password-stdin ghcr.io/criyl
+      - helm push release/portfolio-operator-{{.VERSION}}.tgz oci://ghcr.io/criyl
   release-controller-image:
+    desc: Build KO Image
     env:
       KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator-controller
       GITHUB_TOKEN: ""
-    vars:
-      CURRENT_CONTROLLER_VERSION:
-        sh: yq e '.appVersion' {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
-    preconditions:
-      - sh: "[ '{{.VERSION}}' != '{{.CURRENT_CONTROLLER_VERSION}}' ]"
-        msg: "Cannot release an appVersion without a version bump. {{.CURRENT_CONTROLLER_VERSION}} -> {{.VERSION}}"
     cmds:
       - echo "{{.GITHUB_TOKEN}}" | ko login ghcr.io --username doesntmatter --password-stdin
       - |
