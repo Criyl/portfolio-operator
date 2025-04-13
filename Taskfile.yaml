@@ -29,19 +29,7 @@ tasks:
   swagger-generation:
     desc: Generate swagger docs
     cmds:
-      - swag init --parseDependency -g internal/api/main.go
-  build:
-    desc: Build KO Image
-    env:
-      KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator
-      GITHUB_TOKEN: ""
-    cmds:
-      - echo "{{.GITHUB_TOKEN}}" | ko login ghcr.io --username my-username --password-stdin
-      - |
-        ko build --bare \
-        -t {{.VERSION}} \
-        --image-label org.opencontainers.image.source=https://github.com/criyl/portfolio-operator \
-        ./cmd/server
+      - swag init --parseDependency -g internal/api/api.go
   run:
     desc: Run Program
     cmds:
@@ -53,14 +41,26 @@ tasks:
   release-helm:
     cmds:
       - mkdir -p release
-      - yq e '.version |= "{{.VERSION}}"' -i charts/portfolio-operator/Chart.yaml
       - yq e '.appVersion |= "{{.VERSION}}"' -i charts/portfolio-operator/Chart.yaml
       - helm package --app-version {{.VERSION}} charts/portfolio-operator
       - mv *.tgz release
+      - echo "{{.GITHUB_TOKEN}}" | helm registry login -u doesntmatter --password-stdin ghcr.io/criyl
+      - helm push release/portfolio-operator-`yq e '.version' charts/portfolio-operator/Chart.yaml`.tgz oci://ghcr.io/criyl
+  release-controller-image:
+    desc: Build KO Image
+    env:
+      KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator-controller
+      GITHUB_TOKEN: ""
+    cmds:
+      - echo "{{.GITHUB_TOKEN}}" | ko login ghcr.io --username doesntmatter --password-stdin
+      - |
+        ko build --bare \
+        -t {{.VERSION}} \
+        --image-label org.opencontainers.image.source=https://github.com/criyl/portfolio-operator \
+        ./cmd/server
   release:
     desc: Handle release version
-    deps:
-      - release-helm
     cmds:
       - yq e '.env.VERSION |= "{{.VERSION}}"' -i Taskfile.yaml
-      - task: build
+      - task: release-helm
+      - task: release-controller-image

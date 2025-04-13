@@ -2,6 +2,12 @@
 # Portfolio Kubernetes Operator
 Manage your portfolio natively in your kubernetes cluster.
 
+### Install with Helm
+Chart is available as an image on [ghcr](https://github.com/Criyl/portfolio-operator/pkgs/container/portfolio-operator)
+```bash
+helm install portfolio-operator oci://ghcr.io/criyl/portfolio-operator
+```
+
 ### Supported Annotations
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -18,7 +24,6 @@ metadata:
 ```
 
 ### Environment Variables
-
 | KEY        | DESCRIPTION               | DEFAULT        |
 | ---------- | ------------------------- | -------------- |
 | KUBECONFIG | Path to kubernetes config | ~/.kube/config |

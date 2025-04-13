@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/criyl/portfolio-operator
+  repository: ghcr.io/criyl/portfolio-operator-controller
   pullPolicy: IfNotPresent
   tag: ""
 
