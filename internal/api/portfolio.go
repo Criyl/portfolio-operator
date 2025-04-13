@@ -45,7 +45,11 @@ func ListPortfolios(c *gin.Context) {
 // @Success 200 {object}  []opv1.PortfolioSpec
 // @Router /api/v1/portfolio/tag/{tag} [get]
 func ListPortfoliosByTag(c *gin.Context) {
-	list, err := querier.ListPortfoliosByTag(c.Param("tag"))
+	var (
+		list *opv1.PortfolioList
+		err  error
+	)
+	list, err = querier.ListPortfoliosByTag(c.Param("tag"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 	}
