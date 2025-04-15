@@ -6,7 +6,9 @@ plugins:
     - changelogFile: CHANGELOG.md
       changelogTitle: '# Semantic Versioning Changelog'
   - - '@semantic-release/exec'
-    - prepareCmd: 'task release VERSION=${nextRelease.version}'
+    - prepareCmd: 'task prepare VERSION=${nextRelease.version}'
+    - publishCmd: 'task publish VERSION=${nextRelease.version}'
+    - successCmd: 'task success VERSION=${nextRelease.version}'
   - - '@semantic-release/git'
     - assets:
         - CHANGELOG.md

@@ -4,7 +4,7 @@ on:
     branches:
       - main
 jobs:
-  build-upload-release:
+  semantic-release:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ubuntu-latest
     permissions:
@@ -39,6 +39,7 @@ jobs:
     - name: Semantic Release
       uses: cycjimmy/semantic-release-action@v4
       with:
+        semantic_version: 24.2.3
         extra_plugins: |
           @semantic-release/changelog
           @semantic-release/commit-analyzer
@@ -49,5 +50,3 @@ jobs:
           @semantic-release/commit-analyzer
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-
-   
