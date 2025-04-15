@@ -1,0 +1,44 @@
+version: '3'
+tasks:
+  default:
+    cmds:
+      - task -l
+    silent: true
+
+  prepare-helm:
+    preconditions:
+      - sh: git diff portfolio-operator/Chart.yaml | grep "version:"
+        msg: "Cannot release a version without a version bump."
+    cmds:
+      - mkdir -p {{.ROOT_DIR}}/release
+      - helm package portfolio-operator
+      - mv *.tgz {{.ROOT_DIR}}/release/
+  release-helm:
+    desc: Prepare Helm Release
+    env:
+      GITHUB_TOKEN: ""
+    cmds:
+      - echo "{{.GITHUB_TOKEN}}" | helm registry login -u doesntmatter --password-stdin ghcr.io/criyl
+      - helm push {{.ROOT_DIR}}/release/portfolio-operator-`yq e '.version' portfolio-operator/Chart.yaml`.tgz oci://ghcr.io/criyl
+
+  tag-helm:
+    vars:
+      HELM_VERSION:
+        sh: yq e '.version' {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
+    ignore_error: true
+    cmds:
+      - git tag helm-v{{.HELM_VERSION}}
+  commit-helm:
+    vars:
+      HELM_VERSION:
+        sh: yq e '.version' {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
+    preconditions:
+      - sh: "[ '{{.CI}}' == 'true' ]"
+        msg: "CI must be true to commit helm chart changes."
+    ignore_error: true
+    cmds:
+      - task: release-helm
+      - git add .
+      - git commit -m 'chore(helm-release):{{.HELM_VERSION}} [skip ci]'
+      - task: tag-helm
+      - git push

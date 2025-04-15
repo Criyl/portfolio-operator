@@ -1,6 +1,10 @@
 version: '3'
 env:
   VERSION: 0.1.0
+includes:
+  charts:
+    taskfile: ./charts
+    dir: ./charts
 tasks:
   default:
     cmds:
@@ -27,6 +31,8 @@ tasks:
     cmds:
       - go fmt ./...
   swagger-generation:
+    sources:
+      - '**/*.go'
     desc: Generate swagger docs
     cmds:
       - swag init --parseDependency -g internal/api/api.go
@@ -34,23 +40,33 @@ tasks:
     desc: Run Program
     cmds:
       - go run cmd/server/main.go
-  test:
-    desc: Execute unit tests.
-    deps:
-      - coverage
-  release-helm:
-    cmds:
-      - mkdir -p release
-      - yq e '.appVersion |= "{{.VERSION}}"' -i charts/portfolio-operator/Chart.yaml
-      - helm package --app-version {{.VERSION}} charts/portfolio-operator
-      - mv *.tgz release
-      - echo "{{.GITHUB_TOKEN}}" | helm registry login -u doesntmatter --password-stdin ghcr.io/criyl
-      - helm push release/portfolio-operator-`yq e '.version' charts/portfolio-operator/Chart.yaml`.tgz oci://ghcr.io/criyl
-  release-controller-image:
-    desc: Build KO Image
+
+  prepare-controller-image:
     env:
       KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator-controller
       GITHUB_TOKEN: ""
+    vars:
+      NEXT_HELM_VERSION:
+        sh: yq e '.version' {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml | awk -v versionDiff="0.0.1" -F. -f {{.ROOT_DIR}}/scripts/version-bump.awk OFS=.
+      CURRENT_CONTROLLER_VERSION:
+        sh: yq e '.appVersion' {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
+    preconditions:
+      - sh: "[ '{{.VERSION}}' != '{{.CURRENT_CONTROLLER_VERSION}}' ]"
+        msg: "Cannot release an appVersion without a version bump. {{.CURRENT_CONTROLLER_VERSION}} -> {{.VERSION}}"
+    cmds:
+      - yq e '.appVersion |= "{{.VERSION}}"' -i {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
+      - yq e '.version |= "{{.NEXT_HELM_VERSION}}"' -i {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
+
+  release-controller-image:
+    env:
+      KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator-controller
+      GITHUB_TOKEN: ""
+    vars:
+      CURRENT_CONTROLLER_VERSION:
+        sh: yq e '.appVersion' {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
+    preconditions:
+      - sh: "[ '{{.VERSION}}' != '{{.CURRENT_CONTROLLER_VERSION}}' ]"
+        msg: "Cannot release an appVersion without a version bump. {{.CURRENT_CONTROLLER_VERSION}} -> {{.VERSION}}"
     cmds:
       - echo "{{.GITHUB_TOKEN}}" | ko login ghcr.io --username doesntmatter --password-stdin
       - |
@@ -58,9 +74,27 @@ tasks:
         -t {{.VERSION}} \
         --image-label org.opencontainers.image.source=https://github.com/criyl/portfolio-operator \
         ./cmd/server
-  release:
-    desc: Handle release version
+
+  prepare:
+    desc: Trigger new Release
     cmds:
       - yq e '.env.VERSION |= "{{.VERSION}}"' -i Taskfile.yaml
-      - task: release-helm
+      - task: prepare-controller-image
+      - task: charts:prepare-helm
+
+  publish:
+    desc: Trigger new Release
+    cmds:
       - task: release-controller-image
+      - task: charts:release-helm
+
+  success:
+    cmds:
+      - echo stub for success hook
+
+  release:
+    desc: Trigger new Release
+    cmds:
+      - yq e '.env.VERSION |= "{{.VERSION}}"' -i Taskfile.yaml
+      - task: release-controller-image
+      - task: charts:release-helm
