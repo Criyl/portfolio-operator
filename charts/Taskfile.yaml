@@ -13,6 +13,7 @@ tasks:
       - mkdir -p {{.ROOT_DIR}}/release
       - helm package portfolio-operator
       - mv *.tgz {{.ROOT_DIR}}/release/
+  
   release-helm:
     desc: Prepare Helm Release
     env:

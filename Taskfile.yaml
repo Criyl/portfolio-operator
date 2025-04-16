@@ -40,7 +40,6 @@ tasks:
     desc: Run Program
     cmds:
       - go run cmd/server/main.go
-
   prepare-controller-image:
     env:
       KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator-controller
@@ -56,7 +55,6 @@ tasks:
     cmds:
       - yq e '.appVersion |= "{{.VERSION}}"' -i {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
       - yq e '.version |= "{{.NEXT_HELM_VERSION}}"' -i {{.ROOT_DIR}}/charts/portfolio-operator/Chart.yaml
-
   release-controller-image:
     env:
       KO_DOCKER_REPO: ghcr.io/criyl/portfolio-operator-controller
@@ -74,24 +72,20 @@ tasks:
         -t {{.VERSION}} \
         --image-label org.opencontainers.image.source=https://github.com/criyl/portfolio-operator \
         ./cmd/server
-
   prepare:
     desc: Trigger new Release
     cmds:
       - yq e '.env.VERSION |= "{{.VERSION}}"' -i Taskfile.yaml
       - task: prepare-controller-image
       - task: charts:prepare-helm
-
   publish:
     desc: Trigger new Release
     cmds:
       - task: release-controller-image
       - task: charts:release-helm
-
   success:
     cmds:
       - echo stub for success hook
-
   release:
     desc: Trigger new Release
     cmds:
