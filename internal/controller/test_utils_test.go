@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 
@@ -24,10 +25,10 @@ import (
 type ReconcilerTester struct {
 	t   *testing.T
 	ctx *context.Context
-	r   *ingressReconciler
+	r   *reconciler
 }
 
-func (rt *ReconcilerTester) CheckPortfolio(ingress *netv1.Ingress, expectedPortfolio opv1.Portfolio) {
+func (rt *ReconcilerTester) CheckPortfolio(object client.Object, expectedPortfolio opv1.Portfolio) {
 	portfolio := opv1.Portfolio{}
 
 	err := rt.r.Client.Get(*rt.ctx, client.ObjectKey{
@@ -44,11 +45,11 @@ func (rt *ReconcilerTester) CheckPortfolio(ingress *netv1.Ingress, expectedPortf
 	assert.Equal(rt.t, expectedPortfolio, portfolio)
 }
 
-func (rt *ReconcilerTester) CheckIngressNotFound(ingress *netv1.Ingress) {
+func (rt *ReconcilerTester) CheckObjectNotFound(object client.Object) {
 	newPortfolio := opv1.Portfolio{}
 	err := rt.r.Client.Get(*rt.ctx, client.ObjectKey{
-		Name:      ingress.Name,
-		Namespace: ingress.Namespace,
+		Name:      object.GetName(),
+		Namespace: object.GetNamespace(),
 	},
 		&newPortfolio,
 	)
@@ -57,11 +58,11 @@ func (rt *ReconcilerTester) CheckIngressNotFound(ingress *netv1.Ingress) {
 	}
 }
 
-func (rt *ReconcilerTester) Reconcile(ingress *netv1.Ingress) error {
+func (rt *ReconcilerTester) Reconcile(object client.Object) error {
 	recReq := reconcile.Request{
 		NamespacedName: types.NamespacedName{
-			Name:      ingress.Name,
-			Namespace: ingress.Namespace,
+			Name:      object.GetName(),
+			Namespace: object.GetNamespace(),
 		},
 	}
 
@@ -79,7 +80,7 @@ func (rt *ReconcilerTester) Delete(obj client.Object) {
 	rt.r.Client.Delete(*rt.ctx, obj)
 }
 
-func createFakeReconciler() ingressReconciler {
+func createFakeReconciler[T any]() reconciler {
 
 	restConfig := &rest.Config{}
 
@@ -87,14 +88,16 @@ func createFakeReconciler() ingressReconciler {
 	_ = aggregatorclientsetscheme.AddToScheme(clientsetscheme.Scheme)
 	_ = opv1.AddToScheme(clientsetscheme.Scheme)
 	_ = netv1.AddToScheme(clientsetscheme.Scheme)
+	_ = gatewayv1.Install(clientsetscheme.Scheme)
 
 	builder := fake.NewClientBuilder().WithScheme(clientsetscheme.Scheme)
 
 	fakeClient := builder.Build()
 
-	return ingressReconciler{
+	return reconciler{
 		Client:     fakeClient,
 		scheme:     clientsetscheme.Scheme,
 		kubeClient: kclientset,
+		TargetObject: any(new(T)).(client.Object),
 	}
 }

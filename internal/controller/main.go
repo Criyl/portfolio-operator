@@ -17,17 +17,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
-)
-
-func init() {
-	utilruntime.Must(opv1.AddToScheme(scheme))
-	utilruntime.Must(v1.AddToScheme(scheme))
-}
+) 
 
 func getRestConfig() *rest.Config {
 	var (
@@ -48,6 +45,12 @@ func getRestConfig() *rest.Config {
 	return restConfig
 }
 
+func Init() {
+	utilruntime.Must(opv1.AddToScheme(scheme))
+	utilruntime.Must(v1.AddToScheme(scheme))
+	utilruntime.Must(gatewayv1.Install(scheme))
+}
+
 func Main() {
 	log.Println("starting controller...")
 	ctrl.SetLogger(zap.New())
@@ -60,28 +63,39 @@ func Main() {
 	}
 	log.Println("kubeconfig established")
 
+	Init()
+
 	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: ":" + config.Instance.METRICS_PORT,
 		},
 	})
+
 	if err != nil {
 		log.Println("unable to start manager")
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+	resources := []client.Object{
+		&v1.Ingress{},
+		&gatewayv1.HTTPRoute{},
+	}
 
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Ingress{}).
-		Complete(&ingressReconciler{
-			Client:     mgr.GetClient(),
-			scheme:     mgr.GetScheme(),
-			kubeClient: clientset,
-		})
-	if err != nil {
-		setupLog.Error(err, "unable to create controller")
-		os.Exit(1)
+	for _, obj := range resources {
+		err = ctrl.NewControllerManagedBy(mgr).
+			For(obj).
+			Complete(&reconciler{
+				Client:     mgr.GetClient(),
+				scheme:     mgr.GetScheme(),
+				kubeClient: clientset,
+				TargetObject: obj,
+			})
+
+		if err != nil {
+			setupLog.Error(err, "unable to create controller")
+			os.Exit(1)
+		}
 	}
 
 	setupLog.Info("starting manager")

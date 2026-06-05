@@ -6,7 +6,6 @@ import (
 	"log"
 
 	opv1 "carroll.codes/portfolio-operator/api/v1"
-	v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 
@@ -16,24 +15,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type ingressReconciler struct {
+type reconciler struct {
 	client.Client
 	scheme     *runtime.Scheme
 	kubeClient *kubernetes.Clientset
+	TargetObject client.Object
 }
 
-func (r *ingressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	var (
 		portfolio *opv1.Portfolio
-		ingress   v1.Ingress
+		object = r.TargetObject.DeepCopyObject().(client.Object)
 	)
-
 	portfolioName := generatePortfolioName(req.NamespacedName)
-	// Get the ingress being reconciled
-	err := r.Client.Get(ctx, req.NamespacedName, &ingress)
 
-	portfolio = portfolioCreateFromIngress(ingress)
+	// Get the object being reconciled
+	err := r.Client.Get(ctx, req.NamespacedName, object)
+
+	portfolio = portfolioCreateFromObject(object)
 	portfolio.Namespace = req.Namespace
 
 	if err != nil {
@@ -59,10 +59,11 @@ func (r *ingressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("Error getting resource: %s", err)
 	}
 
 	if !portfolio.IsValid() {
+		// return ctrl.Result{}, fmt.Errorf("Invalid Portfolio generated: %s",object)
 		return ctrl.Result{}, nil
 	}
 
@@ -73,7 +74,7 @@ func (r *ingressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}, portfolio)
 	if err != nil {
 		if k8serrors.IsNotFound(err) { // portfolio not found, create one
-			err = controllerutil.SetControllerReference(&ingress, portfolio, r.scheme)
+			err = controllerutil.SetControllerReference(object, portfolio, r.scheme)
 			if err != nil {
 				return ctrl.Result{}, fmt.Errorf("couldn't set controller reference for Portfolio %s: %s", portfolioName, err)
 			}
@@ -93,11 +94,11 @@ func (r *ingressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Otherwise update existing Portfolio
-	err = r.Client.Update(ctx, portfolioUpdateFromIngress(ingress, portfolio))
+	err = r.Client.Update(ctx, portfolioUpdateFromObject(object, portfolio))
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("couldn't update Portfolio %s: %s", portfolioName, err)
 	}
 
-	log.Println("Ingress " + portfolioName + " is up-to-date")
+	log.Println("Portfolio " + portfolioName + " is up-to-date")
 	return ctrl.Result{}, nil
 }

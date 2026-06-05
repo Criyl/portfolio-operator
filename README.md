@@ -1,4 +1,5 @@
-[![Helm Checks](https://github.com/Criyl/portfolio-operator/actions/workflows/ci.yaml/badge.svg)](https://github.com/Criyl/portfolio-operator/actions/workflows/ci.yaml)
+[![Helm Checks](https://github.com/Criyl/portfolio-operator/actions/workflows/helm-check.yaml/badge.svg)](https://github.com/Criyl/portfolio-operator/actions/workflows/helm-check.yaml)
+[![Semantic Release](https://github.com/Criyl/portfolio-operator/actions/workflows/semantic-release.yaml/badge.svg)](https://github.com/Criyl/portfolio-operator/actions/workflows/semantic-release.yaml)
 
 # Portfolio Kubernetes Operator
 

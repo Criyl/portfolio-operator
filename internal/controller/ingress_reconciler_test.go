@@ -39,7 +39,7 @@ func TestReconciler_DeletedIngressNoPortfolio(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	reconciler := createFakeReconciler()
+	reconciler := createFakeReconciler[netv1.Ingress]()
 
 	rt := ReconcilerTester{
 		t:   t,
@@ -48,7 +48,7 @@ func TestReconciler_DeletedIngressNoPortfolio(t *testing.T) {
 	}
 
 	ingress := ingressFixture.DeepCopy()
-	expectedPortfolio := portfolioCreateFromIngress(*ingress)
+	expectedPortfolio := portfolioCreateFromObject(ingress)
 
 	rt.Create(&namespaceFixture)
 	rt.Create(ingress)
@@ -65,14 +65,14 @@ func TestReconciler_DeletedIngressNoPortfolio(t *testing.T) {
 	err = rt.Reconcile(ingress)
 	assert.Error(rt.t, err)
 
-	rt.CheckIngressNotFound(ingress)
+	rt.CheckObjectNotFound(ingress)
 }
 
 func TestReconciler_ReconcileCreateMutate(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	reconciler := createFakeReconciler()
+	reconciler := createFakeReconciler[netv1.Ingress]()
 
 	rt := ReconcilerTester{
 		t:   t,
@@ -81,7 +81,7 @@ func TestReconciler_ReconcileCreateMutate(t *testing.T) {
 	}
 
 	ingress := ingressFixture.DeepCopy()
-	expectedPortfolio := portfolioCreateFromIngress(*ingress)
+	expectedPortfolio := portfolioCreateFromObject(ingress)
 
 	rt.Create(&namespaceFixture)
 	rt.Create(ingress)
@@ -106,7 +106,7 @@ func TestReconciler_ReconcileCreateDelete(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	reconciler := createFakeReconciler()
+	reconciler := createFakeReconciler[netv1.Ingress]()
 
 	rt := ReconcilerTester{
 		t:   t,
@@ -115,7 +115,7 @@ func TestReconciler_ReconcileCreateDelete(t *testing.T) {
 	}
 
 	ingress := ingressFixture.DeepCopy()
-	expectedPortfolio := portfolioCreateFromIngress(*ingress)
+	expectedPortfolio := portfolioCreateFromObject(ingress)
 
 	rt.Create(&namespaceFixture)
 	rt.Create(ingress)
@@ -129,14 +129,14 @@ func TestReconciler_ReconcileCreateDelete(t *testing.T) {
 	err = rt.Reconcile(ingress)
 	assert.NoError(rt.t, err)
 
-	rt.CheckIngressNotFound(ingress)
+	rt.CheckObjectNotFound(ingress)
 }
 
 func TestReconciler_ReconcileInvalidIngress(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	reconciler := createFakeReconciler()
+	reconciler := createFakeReconciler[netv1.Ingress]()
 
 	rt := ReconcilerTester{
 		t:   t,
